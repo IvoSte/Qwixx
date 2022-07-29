@@ -1,6 +1,9 @@
 from dataclasses import dataclass
 from elements.dice import Dice
 from elements.score_card import ScoreCard
+from eventHandler import FinalRoundEvent
+import logging
+import pandas as pd
 
 @dataclass
 class Move:
@@ -28,13 +31,18 @@ class Game:
         self.dice_throw_sums = []
 
         self.players = players
+        self.ranked_players = []
 
         self.player_at_turn = None
 
         self.round_counter = 0
         self.game_finished = False
 
+        self.print_final_score_cards = False
+
     def play(self):
+        for player in self.players:
+            player.new_score_card()
         while self.game_finished == False:
             self.round()
 
@@ -52,7 +60,8 @@ class Game:
 
         self.notify_all_players_of_white_throw()
 
-        self.check_game_over()
+        if self.check_game_over():
+            return
 
         self.notify_player_at_turn_of_colored_throws()
 
@@ -61,15 +70,15 @@ class Game:
     def manage_turns(self):
         self.players.append(self.players.pop(0))
         self.player_at_turn = self.players[0]
-        print(f"{self.player_at_turn.name}'s turn!")
+        logging.info(f"{self.player_at_turn.name}'s turn!")
 
     def throw_dice(self):
         self.current_die_throw = []
-        print("Throwing dice!")
+        logging.info("Throwing dice!")
         for die in self.dice:
             die_throw = die.throw()
             self.current_die_throw.append(die_throw)
-            print(f"{die_throw.color} = {die_throw.value}")
+            logging.info(f"{die_throw.color} = {die_throw.value}")
 
     def calculate_dice_throw_sums(self):
         self.dice_throw_sums = []
@@ -97,22 +106,41 @@ class Game:
                 if locked:
                     row_closed_count += 1
         if row_closed_count >= 2:
-            print("Game ended! Two rows locked.")
+            logging.info("Game ended! Two rows locked.")
             self.game_finished = True
-            return
+            return True
 
         for player in self.players:
             if player.score_card.check_four_failed_throws():
-                print(f"Game ended! Four failed throws by {player.name}!")
+                logging.info(f"Game ended! Four failed throws by {player.name}!")
                 self.game_finished = True
+                return True
+        return False
 
     def finish_game(self):
         for player in self.players:
-            print()
+            logging.info("\n")
             player.score_card.calculate_score()
-            player.report()
+            if self.print_final_score_cards:
+                player.report()
 
-        ranked_players = sorted(self.players, key=lambda x: x.score_card.score["Total"], reverse = True)
-        print()
-        print(f"{ranked_players[0].name} is the winner!!")
-        print(f"{ranked_players[-1].name} is the loser (en een nerd).")
+        self.ranked_players = sorted(self.players, key=lambda x: x.score_card.score["Total"], reverse = True)
+        logging.info(f"\n{self.ranked_players[0].name} is the winner!!")
+        logging.info(f"{self.ranked_players[-1].name} is the loser (en een nerd).")
+
+    def player_draw_with_other(self, player):
+        for other in self.players:
+            if other == player:
+                continue
+            if other.score_card.score["Total"] == player.score_card.score["Total"]:
+                return True
+        return False
+
+    def get_results(self):
+        player_results = []
+        for player in self.players:
+            player_result = player.get_final_results()
+            player_result['Ranking'] = self.ranked_players.index(player) + 1
+            player_result['Draw?'] = self.player_draw_with_other(player)
+            player_results.append(player_result)
+        return player_results

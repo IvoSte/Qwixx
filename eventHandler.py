@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from weakref import WeakKeyDictionary
+import logging
 
 @dataclass
 class Event:
@@ -10,6 +11,9 @@ class RowClosedEvent(Event):
     color : str = ""
     name : str = "Row closed"
 
+@dataclass
+class FinalRoundEvent(Event):
+    name : str = "Final round"
 
 class EventHandler:
 
@@ -27,6 +31,6 @@ class EventHandler:
 
     def post(self, event):
         """Post a new event to the message queue"""
-
+        logging.debug(f"Notifying users of {event}")
         for listener in self.listeners:
             listener.notify(event)

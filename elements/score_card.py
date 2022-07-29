@@ -72,8 +72,12 @@ class ScoreCard:
                 return
             if row_value.value == value and not self.row_closed[color]:
                 row_value.marked = True
+                # Final mark needs to lock the row, but can only be placed if 5 or more marks have been set in this row.
                 if idx == 0:
-                    self.lock_row(color)
+                    if self.count_row_marks(color) >= 5:
+                        self.lock_row(color)
+                    else:
+                        row_value.marked = False
                 return
 
     def lock_row(self, color):
@@ -90,12 +94,7 @@ class ScoreCard:
                 return
 
     def count_failed_throws(self):
-        count = 0
-        for check in self.failed_throw:
-            if check:
-                count += 1
-        return count
-
+        return sum(self.failed_throw)
 
     def check_four_failed_throws(self):
         return self.count_failed_throws() == 4
@@ -146,6 +145,17 @@ class ScoreCard:
         if self.row_locks[color] == True:
             count += 1
         return count
+
+    def count_total_marks(self):
+        total = 0
+        total += self.count_row_marks("RED")
+        total += self.count_row_marks("YELLOW")
+        total += self.count_row_marks("GREEN")
+        total += self.count_row_marks("BLUE")
+        return total
+
+    def count_row_locks(self):
+        return sum(self.row_locks.values())
 
     def __str__(self):
         s = ""
