@@ -5,6 +5,8 @@ import pandas as pd
 
 from statistics import Statistics
 
+# Note: Something seems to be off with failed throws. Setting the tolerance to really high means a person will always take the dice if they can.
+#       This should result in many failed throws, as the board leaves many gaps and little options. For some reason, the stat says otherwise.
 
 def main():
 
