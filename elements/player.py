@@ -9,15 +9,27 @@ class MoveEvaluation:
     move: Move
     evaluation: int
 
+@dataclass
+class MoveState:
+    value : int
+    red : bool
+    yellow : bool
+    green : bool
+    blue : bool
+
+    def to_list(self):
+        return [self.value, int(self.red), int(self.yellow), int(self.green), int(self.blue),]
+
 class Player:
 
-    def __init__(self, name, event_handler, white_die_tolerance = 2, colored_die_tolerance = 2):
+    def __init__(self, name, event_handler, white_die_tolerance = 2, colored_die_tolerance = 2, mlp = None):
         self.name = name
         self.event_handler = event_handler
         self.score_card = ScoreCard(event_handler)
         self.white_die_tolerance = white_die_tolerance
         self.colored_die_tolerance = colored_die_tolerance
         self.played_white_this_turn = False
+        self.mlp = mlp
 
     def new_score_card(self):
         self.score_card = ScoreCard(self.event_handler)
@@ -106,3 +118,19 @@ class Player:
                 'Rows Locked' : self.score_card.count_row_locks()
             }
         return player_result
+
+    def move_to_state(self, move):
+        return MoveState(
+            move.value,
+            move.color == "RED",
+            move.color == "YELLOW",
+            move.color == "GREEN",
+            move.color == "BLUE"
+        )
+
+    def evaluate_move_with_mlp(self, move):
+        move_state = self.move_to_state(move)
+        card_state = self.score_card.get_card_state()
+
+        mlp_input = move_state.to_string() + card_state.to_string()
+        return self.mlp.evaluate_input(mlp_input)

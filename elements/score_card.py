@@ -10,6 +10,25 @@ class CardValue:
     value: int
     marked: bool
 
+@dataclass
+class CardState:
+    red_marks: int
+    red_next_value: int
+    yellow_marks: int
+    yellow_next_value: int
+    green_marks: int
+    green_next_value: int
+    blue_marks: int
+    blue_next_value: int
+    failed_throws: int
+    
+    def to_list(self):
+        return [self.red_marks, self.red_next_value,
+                self.yellow_marks, self.yellow_next_value,
+                self.green_marks, self.green_next_value,
+                self.blue_marks, self.blue_next_value,
+                self.failed_throws]
+
 class ScoreCard:
 
     def __init__(self, event_handler):
@@ -122,6 +141,16 @@ class ScoreCard:
                 counting = True
         return counter
 
+    def first_open_row_value(self, color) -> int:
+        # grab the last value
+        value = self.rows[color][len(self.rows[color])]
+        for row_value in reversed(self.rows[color]):
+            # if the value is marked, return the previous value of the row
+            if row_value.marked:
+                return value
+            value = row_value
+
+
     def calculate_score(self):
         self.calculate_row_score("RED")
         self.calculate_row_score("YELLOW")
@@ -156,6 +185,20 @@ class ScoreCard:
 
     def count_row_locks(self):
         return sum(self.row_locks.values())
+
+    def get_card_state(self):
+        state = CardState(
+            red_marks = self.count_row_marks("RED"),
+            red_next_value = self.first_open_row_value("RED"),
+            yellow_marks = self.count_row_marks("YELLOW"),
+            yellow_next_value = self.first_open_row_value("YELLOW"),
+            green_marks = self.count_row_marks("GREEN"),
+            green_next_value = self.first_open_row_value("GREEN"),
+            blue_marks = self.count_row_marks("BLUE"),
+            blue_next_value = self.first_open_row_value("BLUE"),
+            failed_throws = self.count_failed_throws()
+            )
+        return state
 
     def __str__(self):
         s = ""
