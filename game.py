@@ -93,10 +93,10 @@ class Game:
 
     def notify_all_players_of_white_throw(self):
         for player in self.players:
-            player.notify_white_throw(self.dice_throw_sums[0])
+            player.evaluate_white_throw(self.dice_throw_sums[0])
 
     def notify_player_at_turn_of_colored_throws(self):
-        self.player_at_turn.notify_colored_throw(self.dice_throw_sums[1:len(self.dice_throw_sums) + 1])
+        self.player_at_turn.evaluate_colored_throw(self.dice_throw_sums[1:len(self.dice_throw_sums) + 1])
 
     def check_game_over(self):
         # Two conditions for the game to end: either two rows are locked, or one player has four failed throws
